@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Potential Project Stories</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <link rel="shortcut icon" href="thesquare.png" />
+	
+	<script src='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="https://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" />
+    <!--[if lte IE 8]>
+      <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.ie.css" />
+    <![endif]-->
+	
+    <style>
+      html, body, #map {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+		font-family: Helvetica, sans serif;
+      }
+	  
+	  #map{
+		width:100%;
+		position: fixed 0 0;
+		z-index:10;
+	  }
+	  #infobar {
+		width: 200px;
+		display:'block';
+		position: absolute;
+		top:0;
+		right:0;
+		background-color:#fff;
+		z-index:100;
+		padding:10px;
+		overflow-y:scroll;
+		overflow-x:hidden;
+		font-size:14px;
+		opacity:0.8;
+		box-shadow:-2px 2px 5px lightgray;
+	  }
+	  
+	@media screen and (max-width: 500px) {
+		#infobar {
+			width = 100%;
+			display = 'none';
+		}
+	   }
+
+	  #featured, future {
+		width:100%;
+		padding-top:10px;
+		padding-bottom:20px;
+	  }
+	  
+	  .namediv {
+		padding:3px;
+		border: none;
+		background-color:''
+		float:none;
+		background-color:#fff;
+		text-align:left;
+	  }
+	  .sepdiv {
+		width:100%;
+	  }
+	  
+	  .namediv:hover {
+		background-color:#f6df8e;
+	  }
+	  
+	  #playbuttonContainer {
+		position:absolute;
+		top:5;
+		left:5;
+		z-index:999;
+		}
+	
+	   #playbutton {
+	   	margin:5px;
+		width:30px;
+		height:30px;
+		border:solid 1px #ddd;
+		border-radius:5px;
+		background-color:#fff;
+	   }
+	   
+	   .closebuttonContainer {
+			position:absolute;
+			top:5px;
+			right:35px;
+			z-index:999;
+	   }
+	   
+	   #closebutton {
+		position:fixed;
+		top:5;
+		right:5;
+		width:30px;
+		height:30px;
+		border:solid 1px #ddd;
+		border-radius:5px;
+		background-color:#fff;
+		color:#000;
+	   }
+	   
+
+	  
+    </style>
+	
+
+  </head>
+  <body>
+  		<div id="playbuttonContainer">
+			<button id="playbutton" onclick = 'playbuttonfn()'><i class="fa fa-play"></i></button>	
+		</div>
+
+	<div id="infobar">
+		<div id="featured"><b>Featured in Exhibit</b></div>
+		<div id="future"><b>To be added</b></div>
+	</div>
+		<div class = 'closebuttonContainer'>
+			<button id = 'closebutton'><i class="fa fa-close"></i></button>
+		</div>
+    <div id="map"></div>
+
+    
+    <!-- include cartodb.js library -->
+ 
+	
+	 <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js" type="application/javascript"></script>
+	 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+
+<!-- PapaParse - hope this works... -->
+
+
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
+
+    <script>
+
+var playOn = 0;	
+var dotGroup = new L.featureGroup();
+var markerIndices = [];
+var ppIcon = L.Icon.extend({
+    options: {
+     //   shadowUrl: 'thesquare.png',
+        iconSize:     [30,30],
+        shadowSize:   [30,30],
+        popupAnchor:  [-3, -76]
+    }
+});
+
+        var map = new L.Map('map', {
+          zoomControl: false,
+          center: [40.220028,-74.766263],
+          zoom: 14
+        });
+
+
+function playbuttonfn() {
+	if (playOn === 0) {
+		playOn = 1;
+		play();
+	}
+	
+	else {
+		playOn = 0;
+		pause();
+	}
+
+}
+
+function linker(j){
+
+	for (i in data) {
+		if (data[i].Name === j) {
+			pos = i;
+			setDisplays();		
+		}
+	}
+
+}
+
+function toggle() {
+	if ((document.getElementById('infobar').style.display === 'block')||(document.getElementById('infobar').style.display === '')) {
+		document.getElementById('infobar').style.display = 'none';
+		var closeicon = "<i class='fa fa-chevron-down'></i>";
+		document.getElementById('closebutton').innerHTML = closeicon;
+	}
+	
+	else {
+		document.getElementById('infobar').style.display = 'block';
+		var closeicon = "<i class='fa fa-close'></i>";
+		document.getElementById('closebutton').innerHTML = closeicon;
+	}
+}
+
+function main() {
+
+document.getElementById('closebutton').addEventListener('click', toggle);
+
+mapboxBase = L.tileLayer('https://api.mapbox.com/styles/v1/ixd-maps/ckp4lnovr72xe17o2i59rmtrp/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiaXhkLW1hcHMiLCJhIjoiY2p5aTNyeDJjMDZiNzNjbzJ3NXg4enBnNyJ9.Pu8sks70-J3xwfXbVYk2rA', {
+//	maxZoom:17,
+	attribution: 'iana dikidjieva with mapbox'
+}).addTo(map);	
+
+dotGroup.addTo(map);
+	
+}
+
+var content = '';
+var latlng;
+var pos = 0;
+var data;
+var latlngArray = [];
+
+function showInfo(results) {
+
+	main();
+	
+	data = results.data;
+
+	for (i in data) {
+		var spot = data[i];
+		whichDot = spot;
+		const newName = document.createElement("button");
+		const separator = document.createElement("div");
+		separator.className = 'sepdiv';
+		newName.className = 'namediv';
+		newName.id = data[i].Name;
+		const newContent = document.createTextNode(spot.Name);
+		newName.appendChild(newContent);
+		newName.addEventListener('click', function clickfunction() {linker(this.id)});
+		
+		if (spot.Status === 'Featured in exhibit') {
+			document.getElementById('featured').appendChild(separator);
+			document.getElementById('featured').appendChild(newName);
+		}
+
+		else {
+			document.getElementById('future').appendChild(separator);
+			document.getElementById('future').appendChild(newName);
+		}		
+		
+
+		var latlng = [spot.Latitude, spot.Longitude];
+		//var markerColor = markercolor(spot.Site_Type);
+//		console.log(latlng);
+		
+		if (latlng[0]) {
+		var squareIcon = new ppIcon({iconUrl:'thesquare.png'});
+		var marker = new L.marker(latlng, {icon:squareIcon, opacity:0.5});
+		marker.id = i;
+		
+		marker.bindTooltip("<b>"+ spot.Name + ", " + spot.Age + "</b><br>" + spot.Date + "</b><br>" + spot.Location + "<br><br><hr><span style='font-size:95%'>" + data[pos].Status + "</span>");
+		
+		marker._tooltip.options.direction = 'top';
+		marker.on('mouseover', function(e) {
+			this._icon.style['opacity']=1;	
+			document.getElementById(data[this.id].Name).style.backgroundColor = '#f6df8e';
+			});
+		marker.on('mouseout', function(e) {
+			this._icon.style['opacity']=0.5;
+			document.getElementById(data[this.id].Name).style.backgroundColor = '';
+			
+			});
+
+		dotGroup.addLayer(marker);
+		}
+
+	}
+	console.log(dotGroup._layers);
+// console.log(document.getElementById('infobar'));
+ 
+	for (i in dotGroup._layers){
+		latlngArray.push(i);
+	}
+	
+//	console.log(latlngArray);
+
+		
+}
+
+var animationInterval;
+
+function play() {
+	var pauseicon = '<i class="fa fa-pause"></i>';
+	document.getElementById('playbutton').innerHTML = pauseicon;
+	animationInterval = setInterval(animate, 2000);
+}
+
+function pause() {
+	pos = 0;
+	map.setView([40.220028,-74.766263],14);
+	var playicon = '<i class="fa fa-play"></i>'
+	document.getElementById('playbutton').innerHTML = playicon;
+	for (i in dotGroup._layers) {
+		dotGroup._layers[i].closeTooltip();
+		dotGroup._layers[i]._icon.style['opacity'] = 0.5;
+	}
+	for (i in data) {
+		document.getElementById(data[i].Name).style.backgroundColor = '';
+	}
+	clearInterval(animationInterval);
+}
+
+function setDisplays() {
+			for (i in dotGroup._layers) {
+				dotGroup._layers[i].closeTooltip();
+				dotGroup._layers[i]._icon.style['opacity'] = 0.5;
+				}
+
+			for (i in data) {
+				if (i !== pos) {
+					document.getElementById(data[i].Name).style.backgroundColor = '#fff';
+				}
+				document.getElementById(data[i].Name).addEventListener('mouseover', function() {this.style.backgroundColor = '#f6df8e'});
+				document.getElementById(data[i].Name).addEventListener('mouseout', function() {this.style.backgroundColor = '#fff'});
+			}
+			content = "<b>" + data[pos].Name + ", " + data[pos].Age + "</b></br>" + data[pos].Date + "<br>" + data[pos].Location + "<br><hr>" + data[pos].Status;
+			latlng = [data[pos].Latitude, data[pos].Longitude];
+			dotgroupPos = 
+			dotGroup._layers[latlngArray[pos]]._icon.style['opacity'] = 1;
+				map.panTo(latlng, 15);
+			dotGroup._layers[latlngArray[pos]].openTooltip();
+			document.getElementById(data[pos].Name).style.backgroundColor = '#f6df8e';
+
+			
+//			console.log(pos, content);
+//			document.getElementById("infobar").innerHTML = content;
+			
+			if(pos > 0) {
+				dotGroup._layers[latlngArray[pos-1]]._icon.style['opacity'] = 0.5;
+				dotGroup._layers[latlngArray[pos-1]].closeTooltip();
+				document.getElementById(data[pos-1].Name).style.backgroundColor = '';
+			}
+			
+			else if (pos === 0){
+				place = data.length-2;
+				dotGroup._layers[latlngArray[place]]._icon.style['opacity'] =0.5;
+				dotGroup._layers[latlngArray[place]].closeTooltip();
+				document.getElementById(data[place].Name).style.backgroundColor = '';
+			
+			}
+			
+}
+
+function animate() {
+			if (pos < data.length-1) {
+				setDisplays();
+				pos+=1;
+			}
+			else {pos = 0}
+//		console.log(pos)
+	}
+			
+
+
+function fetchSheet({complete }) {
+    let url = `https://sheets.googleapis.com/v4/spreadsheets/1khAp2T2ywRPRcLdneECp3esyRZE2JqA0Krmf4DH4l5M/values/'story_locations'!A1:I26?key=AIzaSyAFIFNFrf01wbzO7Wmt4ZVQIna7HFPivPw`;
+    return fetch(url).then(response =>
+        response.json().then(result => {
+            let data = Papa.parse(Papa.unparse(result.values), { header: true });
+            complete(data);
+        })
+    );
+}
+
+function init() {
+
+    fetchSheet({
+        complete: showInfo
+    });
+	}
+
+
+window.addEventListener('DOMContentLoaded', init);
+
+      // you could use $(window).load(main);
+    
+    </script>
+  </body>
+</html>
